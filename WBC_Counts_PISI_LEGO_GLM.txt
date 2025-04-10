@@ -1,0 +1,60 @@
+# Set working directory
+setwd("C:/Users/User/Desktop/File_Location")
+
+# Load necessary Libraries
+library(MuMIn)
+library(tweedie)
+library(statmod)
+
+# Load data
+data <- read.csv("PISI.csv", header = TRUE)
+
+# Function to fit and evaluate models with different variance powers
+evaluate_tweedie_models <- function(data) {
+  results <- data.frame(variance_power = numeric(), AIC = numeric())
+  
+  for (p in seq(1.1, 1.9, by = 0.1)) {
+    model <- tryCatch(
+      glm(WBC.Counts ~ Gradient + Parasitemia + Date,
+          data = data,
+          family = tweedie(var.power = p, link.power = 0)),
+      error = function(e) NULL
+    )
+    
+    if (!is.null(model)) {
+      aic_value <- AICtweedie(model)
+      results <- rbind(results, data.frame(variance_power = p, AIC = aic_value))
+    }
+  }
+  
+  return(results)
+}
+
+# Run the evaluation
+Best_Var <- evaluate_tweedie_models(data)
+
+# Run Tweedie model evaluation and find the best variance power
+results <- evaluate_tweedie_models(data)
+print(results)  # Print all AIC values
+
+# Select the best variance power with the lowest AIC
+best_p <- results$variance_power[which.min(results$AIC)]
+print(paste("Best variance power:", best_p))
+
+# Fit the global model using the best variance power
+global_model <- glm(WBC.Counts ~ Gradient + Parasitemia + Date,
+                    data = data,
+                    family = tweedie(var.power = best_p, link.power = 0),
+                    na.action = na.fail)
+
+# Perform model selection using dredge
+dredge_results <- dredge(global_model, rank = AICtweedie)
+
+# Print the dredge results
+print(dredge_results)
+
+# Perform model averaging on the dredge results within 2 AIC units
+model_avg <- model.avg(dredge_results, subset = delta < 2)
+
+# Print the summary of the model averaging
+print(summary(model_avg))

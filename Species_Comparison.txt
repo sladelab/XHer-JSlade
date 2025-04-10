@@ -1,0 +1,36 @@
+# Set the working directory
+setwd("C:/Users/User/Desktop/File_Location")
+
+# Load necessary Libraries
+library(multcomp)
+
+# Load data
+data <- read.csv("AllSpecies.csv", header = TRUE)
+
+# Ensure 'Species' is a factor
+data$Species <- as.factor(data$Species)
+
+# Perform the Fligner-Killeen Test on H.L.Ratio across Species
+result <- fligner.test(H.L.Ratio ~ Species, data = data)
+print(result)  # Print the result of the Fligner-Killeen Test
+
+# Compute variance per group
+variances <- tapply(data$H.L.Ratio, data$Species, var)
+
+# Assign weights (Inverse Variance)
+weights <- 1 / variances[data$Species]
+
+# Add weights to the data frame
+data$weights <- weights
+
+# Weighted Least Squares ANOVA
+wls_model <- lm(H.L.Ratio ~ Species + Parasitemia + Gradient, data = data, weights = weights)
+
+# Print the summary of the weighted least squares model
+summary_wls <- summary(wls_model)
+print(summary_wls)
+
+# Perform Tukey post-hoc test for Species
+tukey_result <- glht(wls_model, linfct = mcp(Species = "Tukey"))
+summary_tukey <- summary(tukey_result)
+print(summary_tukey)

@@ -1,0 +1,25 @@
+# Set working directory
+setwd("C:/Users/User/Desktop/File_Location")
+
+# Load necessary Libraries
+library(emmeans)
+
+# Load data
+data <- read.csv("HOFI.csv", header = TRUE)
+
+# Convert variables
+data$Classification <- as.factor(data$Classification)
+data$Parasite <- ifelse(data$Parasite == "Yes", 1, 0)  # Convert Yes/No to 1/0
+
+# Fit a global model with all predictors and interactions
+global_model <- glm(Parasite ~ Classification + Date, data = data, 
+                    family = binomial, na.action = na.fail)
+
+# Summary of the global model
+summary(global_model)
+
+# Get estimated prevalence and pairwise comparisons between sites
+posthoc <- emmeans(global_model, pairwise ~ Classification | Date, type = "response")
+
+# Print the summary of the contrasts
+print(summary(posthoc$contrasts, infer = c(TRUE, TRUE)))

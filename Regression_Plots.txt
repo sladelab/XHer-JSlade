@@ -1,0 +1,66 @@
+# Set working directory to specified path location
+setwd("C:/Users/User/Desktop/File_Location")
+
+# Load necessary library
+library(ggplot2)
+
+# Load the data
+data <- read.csv("HOFI.csv", header = TRUE)
+
+# Calculate the date from Julian date
+known_julian_date <- 24053
+known_calendar_date <- as.Date("2024-02-22")
+origin_date <- known_calendar_date - known_julian_date
+
+# Convert the Date column using the calculated origin
+data$Date <- as.Date(data$Date, origin = origin_date)
+
+# H/L Ratio plot
+hl_plot <- ggplot(data, aes(x = Date, y = H.L.Ratios.)) +
+  geom_point(aes(shape = as.factor(Gradient)), size = 2, stroke = 0.8) +
+  geom_smooth(method = "lm", formula = y ~ x, color = "black") +
+  labs(x = NULL, y = "Heterophils/Lymphocytes", shape = "Gradient") + 
+  theme_classic() +
+  theme(
+    axis.line = element_line(color = "black", linewidth = 0.75),
+    legend.title = element_text(size = 15),
+    legend.text = element_text(size = 13),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    axis.text.x = element_text(size = 15),
+    axis.text.y = element_text(size = 11) 
+  ) +
+  scale_shape_manual(
+    values = c("1" = 0, "2" = 1, "3" = 2),
+    labels = c("1" = "Urban", "2" = "Suburban", "3" = "Rural")
+  ) +
+  guides(shape = guide_legend(override.aes = list(size = c(3, 3, 3))))
+
+# Save H/L Ratio plot as PNG at 600 DPI
+ggsave("H_L_Ratio_Plot.png", plot = hl_plot, dpi = 600, width = 8, height = 6)
+
+# Parasitemia plot
+parasitemia_plot <- ggplot(data, aes(x = Date, y = (Parasitemia / 10000) * 100)) +
+  geom_point(aes(shape = as.factor(Gradient)), size = 2, stroke = 0.8) +
+  geom_smooth(method = "lm", formula = y ~ x, color = "black") +
+  labs(x = NULL, y = "Parasitemia", shape = "Gradient") + 
+  theme_classic() +
+  theme(
+    axis.line = element_line(color = "black", linewidth = 0.75),
+    legend.title = element_text(size = 15),
+    legend.text = element_text(size = 13),
+    axis.title.x = element_text(size = 15),
+    axis.title.y = element_text(size = 15),
+    axis.text.x = element_text(size = 15),
+    axis.text.y = element_text(size = 11) 
+  ) +
+  scale_shape_manual(
+    values = c("1" = 0, "2" = 1, "3" = 2),
+    labels = c("1" = "Urban", "2" = "Suburban", "3" = "Rural")
+  ) +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  guides(shape = guide_legend(override.aes = list(size = c(3, 3, 3))))
+
+# Save Parasitemia plot as PNG at 600 DPI
+ggsave("Parasitemia_Plot.png", plot = parasitemia_plot, dpi = 600, width = 8, height = 6)
+
