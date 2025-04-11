@@ -1,0 +1,124 @@
+1. Download QuPath
+
+    Download QuPath from the official GitHub page:
+    https://github.com/qupath/qupath?tab=readme-ov-file
+
+2. Open QuPath and Create a New Project
+
+    Open QuPath.
+    Go to Analysis pane > Project > Create project.
+    Navigate to:
+    Desktop > HOFI > 3181-64507 > 64507
+    In this example:
+	HOFI = Folder where I placed all birds we captured
+        3181-64507 = Folder containing the images for a specific bird that I want to analyze.
+        64507 = Empty folder where the QuPath project will be saved.
+
+3. Add Images to Your Project
+
+    Go to Analysis pane > Add images.
+    Set the image type to one of the brightfield options.
+        Note: Brightfield (other) ran fastest on my laptop.
+
+    Choose the image location:
+    Desktop > Example_HOFI > 3181-64507
+    Select all the images you want to include.
+
+4. Annotate the Images
+
+    Go to Tools > Select shape type (e.g., Ellipse).
+    Use the drawing tool to annotate over your image.
+
+5. Export Annotation
+
+    Go to File > Export as GeoJSON.
+    Save with a preferred name (e.g., Circle.geojson)
+
+6. Use Annotation in Script
+
+    Go to Automate > Shared Script > New Script
+    Insert code.
+			
+// Import Libraries
+import qupath.lib.objects.PathObject
+import qupath.lib.io.PathIO
+
+// Define the File Path
+def filePath = 'C:/Users/Xue/Desktop/HOFI/3181-64507/64507/Circle.geojson'
+
+// Load the annotation to the from the GeoJSON file
+def file = new File(filePath)
+def annotations = PathIO.readObjects(file)
+
+if (annotations != null && !annotations.isEmpty()) {
+    def imageData = getCurrentImageData()
+    annotations.each { annotation ->
+        if (annotation instanceof PathObject) {
+            imageData.getHierarchy().addObject(annotation)
+        }
+    }
+    fireHierarchyUpdate()
+    print 'Successful!'
+} else {
+    print 'Failed'
+}
+
+    Update the "Define the File Path" to your saved .geojson file.
+
+    Example path:
+    C:/Users/Xue/Desktop/HOFI/3181-64507/64507/Circle.geojson
+    Run the script — your annotation should appear.
+
+7. Run Cell Detection
+
+    Go to Analyze > Cell Detection > Cell Detection
+    Under Detection Image, choose either:
+        Optical Density Sum or
+        Hematoxylin OD 
+
+    Under Intensity parameters, experiment with background radius, median filter radius and sigma,   
+    Sometimes unchecking Split by shape may help depending on cell density
+	Note: I like to start with 15/1/15 for these parameters then adjust from there. Values can be   
+        increased or decreased 
+
+    Adjust Nucleus Parameters (Min/Max area).
+    To find Min/Max nucleus area:
+        Use Tools > Wand or (W). You can click and fill in one or more nuclei. 
+        Go to Annotations pane, click your annotation to view the values in the table.
+        Note: I typically use a min of 600 and a max of 10,000
+
+    Press Run after the necessary adjustments
+        Annotations and the count should appear
+	Note: Some cells may be counted more than once, I usually quickly go through and delete some so 	that it is only counted as one cell and not two. If it doesn't scan well, you can adjust the 
+	parameters and run it again.
+
+8. Manual Annotation
+
+    Use Tools > Points or press (.) to manually mark cells.
+
+    To name your annotations:
+        Open the Annotations list (right panel).
+        Right-click > Add/Remove names.
+        Click your annotation and use Set selected to assign a name.
+
+10. Save Project
+    Go to File > Save.
+    Or, when switching to a new image, QuPath will prompt you to save.
+	Note: Images can be renamed in Image list by right clicking on the specified image.
+
+Notes & Tips
+    Script Reuse:
+    The same script and cell detection settings can be reused for other images as long as the annotation 
+    is in the same location and the image/staining quality is consistent. If the annotation location or    
+    image quality differs, you may need to adjust accordingly.
+
+    Annotation Requirement:
+    The script is only used to manually add the annotation circle. You don’t have to use it, but an  	 
+    annotation must be present on the image before running Cell Detection.
+
+    Alternative Cell Counting Option:
+    You can also use Analyze > Cell Detection > Fast cell counts (brightfield) to get similar results.
+    Depending on the image and stain quality, Fast cell counts may perform better or worse than regular 
+    Cell Detection—so it’s worth trying both. For Fast cell counts, the values I usually adjust are 
+    Gaussian and Background
+
